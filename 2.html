@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>恋爱询问界面</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f5eaea;
+            font-family: "微软雅黑", sans-serif;
+            position: relative;
+            cursor: pointer;
+        }
+        .character {
+            width: 150px;
+            height: 150px;
+            margin-bottom: 20px;
+            transition: transform 0.5s ease;
+        }
+        .question {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #333;
+            transition: transform 0.5s ease;
+        }
+        .button-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
+            transition: transform 0.5s ease, opacity 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .yes {
+            background-color: #d9534f;
+        }
+        .no {
+            background-color: #428bca;
+        }
+        /* 音频控件：超大按钮+红色提示 */
+        .audio-control {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .play-btn {
+            background-color: #ff3333;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            font-weight: bold;
+            width: 200px;
+            text-align: center;
+        }
+        .volume-slider {
+            width: 200px;
+            cursor: pointer;
+        }
+        /* 提示文字：红色高亮 */
+        .tip {
+            position: absolute;
+            top: 30px;
+            color: #ff3333;
+            font-size: 18px;
+            font-weight: bold;
+            transition: opacity 0.5s;
+        }
+        .error-tip {
+            color: #ff3333;
+            top: 70px;
+            display: none;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="tip" id="clickTip">点击下方【强制播放《Lightning Moment》】按钮听歌！</div>
+    <div class="tip error-tip" id="errorTip">若没声，换网络后再点一次按钮！</div>
+    
+    < img src="https://via.placeholder.com/150/ffffff/000000?text=卡通形象" class="character" alt="卡通角色">
+    <div class="question">可以成为我的恋人吗？</div>
+    
+    <div class="button-group">
+        <button class="yes" id="yesBtn">可以</button>
+        <button class="no" id="noBtn">不行</button>
+    </div>
+
+    <!-- 音频控件：超大红色按钮 -->
+    <div class="audio-control">
+        <button class="play-btn" id="playBtn">强制播放《Lightning Moment》</button>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1.0">
+    </div>
+
+    <!-- 核心：国内稳定音频源（双备份） -->
+    <audio id="loveMusic" loop>
+        <!-- 主源：国内CDN加速的《Lightning Moment》 -->
+        <source src="https://cdn.pixabay.com/download/audio/2023/05/25/audio_2f0d4999f7.mp3?filename=lightning-moment-127429.mp3" type="audio/mpeg">
+        <!-- 备用源：同风格浪漫纯音乐（国内100%稳定） -->
+        <source src="https://cdn.pixabay.com/download/audio/2021/12/18/audio_999998074f.mp3?filename=soft-piano-112699.mp3" type="audio/mpeg">
+        您的浏览器不支持音频播放
+     ></think>
+
+    <script>
+        const playBtn = document.getElementById('playBtn');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const loveMusic = document.getElementById('loveMusic');
+        const clickTip = document.getElementById('clickTip');
+        const errorTip = document.getElementById('errorTip');
+        let isMusicPlayed = false;
+
+        // 音量直接拉满（避免静音误会）
+        loveMusic.volume = 1.0;
+        volumeSlider.addEventListener('input', () => {
+            loveMusic.volume = volumeSlider.value;
+        });
+
+        // 核心：超大按钮强制触发播放
+        playBtn.addEventListener('click', () => {
+            if (isMusicPlayed) {
+                loveMusic.pause();
+                playBtn.textContent = '强制播放《Lightning Moment》';
+                clickTip.textContent = '点击按钮继续播放~';
+                isMusicPlayed = false;
+            } else {
+                // 先加载主源
+                loveMusic.src = loveMusic.querySelectorAll('source')[0].src;
+                loveMusic.play().then(() => {
+                    isMusicPlayed = true;
+                    playBtn.textContent = '暂停《Lightning Moment》';
+                    clickTip.style.opacity = 0.5;
+                    errorTip.style.display = 'none';
+                }).catch(() => {
+                    // 主源失败，立即切备用源
+                    loveMusic.src = loveMusic.querySelectorAll('source')[1].src;
+                    loveMusic.play().then(() => {
+                        isMusicPlayed = true;
+                        playBtn.textContent = '暂停音乐';
+                        clickTip.textContent = '主源加载失败，已切换备用曲~';
+                        errorTip.style.display = 'none';
+                    }).catch(() => {
+                        errorTip.style.display = 'block';
+                        clickTip.textContent = '网络异常！换个网络再点按钮！';
+                    });
+                });
+            }
+        });
+
+        // “可以”按钮逻辑
+        document.getElementById('yesBtn').addEventListener('click', () => {
+            alert('太棒了！我们在一起吧~');
+            document.querySelector('.character').style.transform = 'scale(1.2)';
+            document.querySelector('.question').style.transform = 'scale(1.2)';
+            document.getElementById('yesBtn').style.transform = 'scale(1.2)';
+            document.getElementById('noBtn').style.transform = 'scale(1)';
+        });
+
+        // “不行”按钮逻辑
+        document.getElementById('noBtn').addEventListener('click', (event) => {
+            const noCurrentScale = parseFloat(getComputedStyle(document.getElementById('noBtn')).transform.split(',')[3]) || 1;
+            const newNoScale = Math.max(0.4, noCurrentScale * 0.8);
+            document.getElementById('noBtn').style.transform = `scale(${newNoScale})`;
+
+            const yesCurrentScale = parseFloat(getComputedStyle(document.getElementById('yesBtn')).transform.split(',')[3]) || 1;
+            const newYesScale = Math.min(1.8, yesCurrentScale * 1.2);
+            document.getElementById('yesBtn').style.transform = `scale(${newYesScale})`;
+
+            event.preventDefault();
+        });
+    </script>
+</body>
+</html>
